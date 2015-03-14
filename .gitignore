@@ -1,5 +1,7 @@
 # Created by https://www.gitignore.io
 
+.env
+
 ### Ruby ###
 *.gem
 *.rbc

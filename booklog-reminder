@@ -2,13 +2,16 @@
 require 'bundler'
 Bundler.require
 
+# 環境変数の読み込み
+Dotenv.load
+
 # デフォルト設定
 config = {
-  :test  => false,
-  :limit => 5,
-  :sender => 'notify@kunimiya.info',
-  :recipient => 'tsunekawa7@gmail.com',
-  :username  => 'kunimiya'
+  :test      => false,
+  :limit     => (ENV["BOOKLOG_LIMIT"].to_i || 5),
+  :sender    => ENV["BOOKLOG_SENDER"].to_s,
+  :recipient => ENV["BOOKLOG_RECIPIENT"],
+  :username  => ENV["BOOKLOG_USERNAME"]
 }
 
 # オプションの定義
