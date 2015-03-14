@@ -27,7 +27,6 @@ class Booklog::Reminder
   protected
 
   def get_unread
-    p unread_url
     # 読みたい本のリストを取得する
     html = open(unread_url).read
     doc  = Nokogiri::HTML.parse html
