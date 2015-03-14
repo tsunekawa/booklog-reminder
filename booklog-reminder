@@ -1,0 +1,64 @@
+#!/usr/bin/env ruby
+require 'bundler'
+Bundler.require
+
+# デフォルト設定
+config = {
+  :test  => false,
+  :limit => 5,
+  :sender => 'notify@kunimiya.info',
+  :recipient => 'tsunekawa7@gmail.com',
+  :username  => 'kunimiya'
+}
+
+# オプションの定義
+opt = OptionParser.new
+opt.on('-t', '--test', 'テストとして実行（メールを送らない)') {|v| config[:test] = v }
+opt.on('-l LIMIT', '--limit VALUE', '提示する本の冊数') {|v| config[:limit] = v.to_i }
+opt.on('-s SENDER', '--sender config[:sender]', '差出人の指定') {|v| config[:sender] = v.to_s }
+opt.on('-r RECIPIENT', '--recipient config[:recipient]', '宛先の指定') {|v| config[:recipient] = v.to_s }
+opt.on('-u USERNAME', '--user config[:username]', 'ユーザ名の指定') {|v| config[:username] = v.to_s }
+opt.parse!(ARGV)
+
+# 未読本データの読み込み
+records = Booklog::Reminder.new(:username => config[:username]).unread
+
+# 提示する本を選択する（今はランダム）
+rest   = records.size
+records = records.to_a.sample(config[:limit])
+
+# メールを作成する
+message = Mail.new do
+  from     config[:sender]
+  to       config[:recipient]
+  subject  "[この本読んだ？] #{records.map{|i| "『#{i[:title]}』" }.join(" ")[0..40]}" 
+
+  html_part do
+    content_type 'text/html; charset=UTF-8'
+    body ERB.new(DATA.read).result(binding)
+  end
+end
+
+# リマインドの送信
+unless config[:test]
+  message.deliver!
+else
+  puts message.to_s
+end
+
+__END__
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" />
+  </head>
+  <body>
+    <p><%= config[:username] %>さんの「読みたい本」の中から<%= config[:limit] %>冊をピックアップしました。(「読みたい本」残り<%= rest %>冊)</p>
+    <table class="table table-striped">
+      <tr><th>タイトル</th><th>著者</th><th>出版年月</th><th>ASIN</th></tr>
+      <% records.each do |record| %>
+      <tr><td><a href="<%= record[:link] %>"><%= record[:title] %></a></td><td><%= record[:author] %></td><td><%= record[:issued_at] %></td><td><%= record[:asin] %></td></tr>
+      <% end %>
+    </table>
+  </body>
+</html>
